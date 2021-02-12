@@ -8,7 +8,7 @@ disable_warnings(exceptions.InsecureRequestWarning)
 parser = argparse.ArgumentParser(description='Aqua Security tool for interacting with Aqua Enterprise API.')
 parser.add_argument('-u', '--user', help='Username or service account for logging into Aqua.', required=True)
 parser.add_argument('-p', '--password', help='Password for logging into Aqua.', required=True)
-parser.add_argument('-U', '--url', help='Aqua base URL. (ie. https://aqua.company.com)')
+parser.add_argument('-U', '--url', help='Aqua base URL. (ie. https://aqua.company.com)', required=True)
 parser.add_argument('-s', '--show-sensitive-images', help='Return all known images that contain sensitive data.',
                     action='store_true')
 args = parser.parse_args()
