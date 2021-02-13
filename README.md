@@ -18,6 +18,11 @@ The official lightweight Linux image, based on Alpine, is hosted on Docker Hub
 and you can find more information on 
 [the Docker Hub page](https://hub.docker.com/repository/docker/kenmac/aqua-api-tool).
 
+### Pull the Docker image
+```bash
+$ docker pull kenmac/aqua-api-tool:latest
+```
+
 #### List all images containing sensitive files
 ```bash
 $ docker run --rm kenmac/aqua-api-tool:latest --show-sensitive-images -u <user> -p <password> --url https://aqua.hostname.com
