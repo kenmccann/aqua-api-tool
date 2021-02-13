@@ -13,7 +13,10 @@ parser.add_argument('-s', '--show-sensitive-images', help='Return all known imag
                     action='store_true')
 parser.add_argument('-cp', '--clear-pending-queue', help='Clear all items in the pending scan queue.',
                     action='store_true')
-parser.add_argument('-dr', '--delete-all-repositories', help='Delete all known image image repositories. Warning: this '
+parser.add_argument('-dr', '--delete-all-repositories', help='Delete all known image repositories. Warning: this '
+                                                             'action cannot be undone and all image data will be '
+                                                             'deleted.', action='store_true')
+parser.add_argument('-de', '--delete-empty-repositories', help='Delete all empty image repositories. Warning: this '
                                                              'action cannot be undone and all image data will be '
                                                              'deleted.', action='store_true')
 args = parser.parse_args()
@@ -117,18 +120,21 @@ def get_repositories(t_url, auth_token):
             repositories.append(repo)
     return repositories
 
-def delete_repositories(auth_token):
+def delete_repositories(auth_token, empty_repos):
     del_count = 0
     repos = get_repositories(base_url, token)
     headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth_token}
     for repo in repos:
         registry_name = repo['registry']
         repo_name = repo['name']
-        response = requests.delete(base_url + "/api/v2/repositories/" + registry_name + "/" + repo_name, headers=headers)
-        if response.status_code != 202:
-            print("Deletion of " + registry_name + "/" + repo_name + " failed: " + response.text)
+        if empty_repos and repo['num_images'] > 0:
+            continue
         else:
-            del_count += 1
+            response = requests.delete(base_url + "/api/v2/repositories/" + registry_name + "/" + repo_name, headers=headers)
+            if response.status_code != 202:
+                print("Deletion of " + registry_name + "/" + repo_name + " failed: " + response.text)
+            else:
+                del_count += 1
 
     print("Deleted " + str(del_count) + " repositories.")
 
@@ -140,7 +146,9 @@ if __name__ == '__main__':
         elif args.clear_pending_queue:
             clear_pending_scan_queue(token)
         elif args.delete_all_repositories:
-            delete_repositories(token)
+            delete_repositories(token, False)
+        elif args.delete_empty_repositories:
+            delete_repositories(token, True)
 
     except KeyboardInterrupt:
         print("\nExiting by user request.\n", file=sys.stderr)
