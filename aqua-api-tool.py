@@ -80,19 +80,25 @@ def query_pages(t_url, params, headers):
                 print('Failure: ' + res.reason)
             addtl_pages = False
             break
+        elif 'result' in json_result:
+            if json_result['result'] is None:
+                addtl_pages = False
+                break
         page_set.append(json_result)
     return page_set
 
 
 def output_sensitive_images(auth_token):
-
+    sens_img_cnt = 0
     images = get_images(base_url, auth_token)
-    print("Images with Sensitive Data: ")
+    print("Images with Sensitive Data:")
     print("------------------------------")
     for image in images:
         if image[2] > 0:
+            sens_img_cnt += 1
             print("Registry: " + image[0] + " | " + "Image: " + image[1] + " | " + "Sensitive Files: " + str(image[2]) +
                   " | " + "Disallowed: " + str(image[3]))
+    print("Total images with sensitive data: " + str(sens_img_cnt))
 
 
 def get_pending_scan_queue(t_url, auth_token):
