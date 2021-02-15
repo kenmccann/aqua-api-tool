@@ -19,11 +19,17 @@ parser.add_argument('-dr', '--delete-all-repositories', help='Delete all known i
 parser.add_argument('-de', '--delete-empty-repositories', help='Delete all empty image repositories. Warning: this '
                                                              'action cannot be undone and all image data will be '
                                                              'deleted.', action='store_true')
+parser.add_argument('--auth-header', help='If you use a custom authorization header for API requests, specify with this'
+                                          ' parameter. (See Aqua docs regarding "AUTHORIZATION_HEADER")')
 args = parser.parse_args()
 
 base_url = args.url
 username = args.user
 password = args.password
+if args.auth_header:
+    auth_header = args.auth_header
+else:
+    auth_header = 'Authorization'
 
 
 def perform_login():
@@ -46,7 +52,7 @@ def perform_login():
 
 def get_images(url, auth_token):
     api_url = url + "/api/v2/images"
-    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth_token}
+    headers = {'Content-Type': 'application/json', auth_header: 'Bearer ' + auth_token}
     pages = query_pages(api_url, params={'page_size': 50}, headers=headers)
     images = []
     for page in pages:
@@ -64,8 +70,13 @@ def query_pages(t_url, params, headers):
         params['page'] = page_cnt
         res = requests.get(t_url, headers=headers, params=params, verify=False)
         json_result = res.json()
-        if (json_result == [] or json_result['result'] == None) or len(json_result['result']) == 0:
-            if res.status_code != 200:
+        if json_result == [] or 'result' not in json_result:
+            if res.status_code == 401:
+                print('ERROR: The Aqua API rejected your authorization attempt.  Check to make sure the provided '
+                      'credentials have the ability access the API and ensure a custom authorization header is not '
+                      'needed.')
+                exit(1)
+            elif res.status_code != 200:
                 print('Failure: ' + res.reason)
             addtl_pages = False
             break
@@ -86,7 +97,7 @@ def output_sensitive_images(auth_token):
 
 def get_pending_scan_queue(t_url, auth_token):
     api_url = t_url + "/api/v1/scanqueue"
-    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth_token}
+    headers = {'Content-Type': 'application/json', auth_header: 'Bearer ' + auth_token}
     params = {'statuses': 'pending', 'page_size': '50'}
     pages = query_pages(api_url, params=params, headers=headers)
 
@@ -101,7 +112,7 @@ def get_pending_scan_queue(t_url, auth_token):
 def clear_pending_scan_queue(auth_token):
     queue = get_pending_scan_queue(base_url, auth_token)
     api_url = base_url + "/api/v1/scanqueue/cancel_jobs"
-    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth_token}
+    headers = {'Content-Type': 'application/json', auth_header: 'Bearer ' + auth_token}
     response = requests.post(api_url, data='{"statuses":["pending"]}', headers=headers)
     if response.status_code != 200:
         print("Cancelled " + str(len(queue)) + " scan jobs.")
@@ -111,7 +122,7 @@ def clear_pending_scan_queue(auth_token):
 
 def get_repositories(t_url, auth_token):
     api_url = t_url + "/api/v2/repositories"
-    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth_token}
+    headers = {'Content-Type': 'application/json', auth_header: 'Bearer ' + auth_token}
     params = {'page_size': 50, 'include_totals': True, 'order_by': 'name'}
     pages = query_pages(api_url, params=params, headers=headers)
     repositories = list()
@@ -123,7 +134,7 @@ def get_repositories(t_url, auth_token):
 def delete_repositories(auth_token, empty_repos):
     del_count = 0
     repos = get_repositories(base_url, token)
-    headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth_token}
+    headers = {'Content-Type': 'application/json', auth_header: 'Bearer ' + auth_token}
     for repo in repos:
         registry_name = repo['registry']
         repo_name = repo['name']
