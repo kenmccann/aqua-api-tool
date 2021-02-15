@@ -47,6 +47,7 @@ You can always see the full usage using the `-h` parameter:
 ```
 $ docker run --rm kenmac/aqua-api-tool:latest -h 
 usage: aqua-api-tool.py [-h] -u USER -p PASSWORD -U URL [-s] [-cp] [-dr] [-de]
+                        [--auth-header AUTH_HEADER]
 
 Aqua Security tool for interacting with Aqua Enterprise API.
 
@@ -68,4 +69,15 @@ optional arguments:
                         Delete all empty image repositories. Warning: this
                         action cannot be undone and all image data will be
                         deleted.
+  --auth-header AUTH_HEADER
+                        If you use a custom authorization header for API
+                        requests, specify with this parameter. (See Aqua docs
+                        regarding "AUTHORIZATION_HEADER")
+```
+
+### Authorization Headers
+If your Aqua Enterprise installation has a customized authorization header, often used with reverse proxies, you can 
+specify this custom header with `--auth-header <header value>`.
+```bash
+$ docker run --rm kenmac/aqua-api-tool:latest --auth-header aqua-auth ....
 ```
